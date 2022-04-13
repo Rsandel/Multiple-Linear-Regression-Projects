@@ -1,0 +1,147 @@
+---
+title: "MATH 4773/5773: Project 1"
+author: "Robert Sandel"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    code_folding: show
+    csl: biomed-central.csl
+    df_print: paged
+    fig_caption: yes
+    fig_height: 6
+    fig_width: 7
+    number_sections: yes
+    theme: journal
+    toc: yes
+    toc_float: yes
+  word_document:
+    toc: yes
+    toc_depth: '4'
+  pdf_document:
+    df_print: paged
+    fig_caption: yes
+    fig_height: 6
+    fig_width: 7
+    highlight: tango
+    toc: yes
+    toc_depth: 4
+bibliography: project1.bib
+abstract: This is Dr. Stewart
+---
+
+<center>
+
+![Dr. Wayne Stewart](wayne.jpg "My Picture"){ width=20% }
+
+</center>
+
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readxl)
+library(s20x)
+library(knitr)
+library(vcdExtra)
+```
+
+# Introduction to the data
+The occurrence of methyl tert-butyl ether (MTBE) in water from public wells in New Hampshire has increased steadily over the past several years. Using a laboratory reporting level of 0.2 mu g/L, 40% of samples from public wells and 21% from private wells in southeast New Hampshire have measurable concentrations of MTBE.
+
+MTBE is a colourless liquid with a characteristic odor that is highly flammable, vapours form explosive mixtures with air, Sparingly soluble in water, lighter than water, highly volatile, and acute or chronic health hazards result from ingestion of the substance. [@gestis_substance_database]
+
+
+
+MTBE was correlated positively with well depth for public supply wells.
+<center>
+
+![Wells used in this study [@pepperracoon_2015]](well.jpg){ width=10000% }
+</center>
+The object of the study is to determine whether the depth of the well that was drilled correlates with the levels of MTBE present. [@ayotte_argue_mcgarry_2004]
+
+
+For the purpose of this project, I will examine whether MTBE detection levels are dependent on the Aquifer.
+
+
+## Data and variables(see MS pg. 459 etc)
+
+```{r}
+MTBE=read_excel("C:/Users/Robert/Desktop/Math 4773/Project 1/MTBE.xls")
+Aquifer= with(MTBE,data.frame(Aquifier = MTBE$Aquifier))
+Detect= with(MTBE,data.frame(Detect = MTBE$`MTBE-Detect`))
+df = with(MTBE,data.frame(Aquifier = MTBE$Aquifier, Detect = MTBE$`MTBE-Detect`))
+
+tab=with(df,table(Aquifier,Detect))
+kable(addmargins(tab),caption="MTBE")
+```
+
+## Make plots and summaries
+This image is a visual distribution of the data
+
+
+```{r}
+mosaic(tab,color="poop")
+```
+
+
+
+
+
+
+
+# Describe the theory you will use
+I will be using a chisq analysis of the data to test for independence.
+We estimate the ith row marginal probability, pi, and define it as
+
+$$\hat{p}_i=\frac{n_i}{n}=\frac{Row \ i \ total}{n}$$
+the best estimate of hte jth marginal column probabilit is 
+
+$$\hat{p}_j=\frac{n_j}{n}=\frac{Column \ j \ total}{n}$$
+
+Then the estimated expected cell count in the ith row and jth column is 
+
+$$\hat{E}(n_{ij})=n\hat{p}_i\hat{p}_j=\frac{n_i}{n}\frac{n_i}{n}n=\frac{(Row \ i \ total) (Column \ j \ total)}{n}$$
+
+The general form of a test statistic, r x c contingency table with a large n is defined as 
+
+$$\chi^2=\Sigma_{j=1}^c\Sigma_{i=1}^r\frac{[n_{ij}-\hat{E}(n_{ij})]^2}{\hat{E}(n_{ij})}=\Sigma_{j=1}^c\Sigma_{i=1}^r\frac{(n_{ij}-\frac{n_i}{n}\frac{n_i}{n}n)^2}{\frac{n_i}{n}\frac{n_i}{n}n}$$
+this is the chisq distribution
+
+the rejection region for the test is 
+$$\chi^2>\chi^2_\alpha$$
+
+[@mendenhall_sincich_2016]
+
+# Check assumptions
+```{r}
+mtbe.r = crosstabs(~Aquifier+Detect,df)$row.props
+mtbe.c = crosstabs(~Aquifier+Detect,df)$col.props
+mtbe.w = crosstabs(~Aquifier+Detect,df)$whole.props
+
+crosstabs(~Aquifier+Detect,df)
+```
+
+
+# Make plots
+
+```{r}
+kjj = data.frame(x=seq(0,7.5,0.01),y=dchisq(seq(0,7.5,0.01),1))
+
+library(ggplot2)
+ggplot(kjj) + geom_path(aes(x,y)) +
+  geom_linerange(data=kjj[kjj$x>qchisq(0.05,1,lower.tail=F),],aes(x=x,ymin=0,ymax=y),colour="tomato")
+```
+
+# Conclusion
+I am testing for independence with
+
+$H_0:$ the two classifications are independent
+$H_a:$ The two classifications are dependent
+
+since the p-value is 0.96365>0.05, we can say they are neither dependent or independent, due to lack of data, we accept the null.
+
+
+
+
+#References
